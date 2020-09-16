@@ -45,7 +45,7 @@ func main() {
 
 type State struct {
 	RedirectURL string
-	Altk string
+	Altk *string `json:"Altk,omitempty"`
 }
 
 func getAuthURL(state State) (string, error) {

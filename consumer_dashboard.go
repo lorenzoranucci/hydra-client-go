@@ -44,7 +44,7 @@ func handleConsumerDashboardGet(w http.ResponseWriter, r *http.Request, _ httpro
 
 		autoLoginToken := r.URL.Query().Get("altk")
 		if autoLoginToken != "" {
-			state.Altk = autoLoginToken
+			state.Altk = &autoLoginToken
 			authURL, err := getAuthURL(
 				state,
 			)
