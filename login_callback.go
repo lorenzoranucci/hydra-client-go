@@ -53,6 +53,11 @@ func handleLoginCallback(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		Value: fmt.Sprintf("%v", idt),
 	})
 
+	http.SetCookie(w, &http.Cookie{
+		Name:  "refreshToken",
+		Value: fmt.Sprintf("%v", token.RefreshToken),
+	})
+
 	state := &State{}
 	stateJson := r.URL.Query().Get("state")
 	err = json.Unmarshal([]byte(stateJson), state)

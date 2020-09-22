@@ -19,8 +19,8 @@ import (
 const Port = 9011
 const ClientID = "client-frontend.localhost"
 const ClientSecret = "some-secret"
-const Auth2AuthURL = "https://localhost:9000/oauth2/auth"
-const Auth2TokenURL = "https://localhost:9000/oauth2/token"
+const Auth2AuthURL = "https://www.prontopro.dev/oauth2/auth"
+const Auth2TokenURL = "https://www.prontopro.dev/oauth2/token"
 var CallBackURL = fmt.Sprintf("http://%s:%d/login-callback", ClientID, Port)
 
 var Scopes = []string{"openid", "offline"}

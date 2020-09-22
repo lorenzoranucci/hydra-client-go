@@ -12,10 +12,13 @@ var consumerDashboardTemplate = template.Must(template.New("").Parse(`<html>
 <head></head>
 <body>
 <h1>Welcome to consumer dashboard</h1>
-<div>You are signed in and we can recognize you with the following Access token:</div>
-<div>{{ .AccessToken }}</div>
+<div>You are signed in and we can recognize you with the following:<br/>
+<div>Access token:</div>
+<div>{{ .AccessToken }}</div></br>
 <div>ID token:</div>
-<div>{{ .IDToken }}</div>
+<div>{{ .IDToken }}</div></br>
+<div>Refresh token:</div>
+<div>{{ .RefreshToken }}</div></br>
 <script>
 window.onload = function() {
 	if ({{ .GoToAuth }}) {
@@ -32,6 +35,7 @@ func handleConsumerDashboardGet(w http.ResponseWriter, r *http.Request, _ httpro
 
 	authTokenCookie, err := r.Cookie("accessToken")
 	idTokenCookie, err := r.Cookie("idToken")
+	refreshTokenCookie, err := r.Cookie("refreshToken")
 	if err != nil || authTokenCookie.Value == "" {
 		authURL, err := getAuthURL(
 			state,
@@ -68,6 +72,7 @@ func handleConsumerDashboardGet(w http.ResponseWriter, r *http.Request, _ httpro
 		_ = consumerDashboardTemplate.Execute(w, struct {
 			AccessToken string
 			IDToken  string
+			RefreshToken  string
 			GoToAuth bool
 			AuthURL string
 		}{
@@ -80,11 +85,13 @@ func handleConsumerDashboardGet(w http.ResponseWriter, r *http.Request, _ httpro
 	_ = consumerDashboardTemplate.Execute(w, struct {
 		AccessToken string
 		IDToken  string
+		RefreshToken  string
 		GoToAuth bool
 		AuthURL string
 	}{
 		AccessToken: authTokenCookie.Value,
 		IDToken: idTokenCookie.Value,
+		RefreshToken: refreshTokenCookie.Value,
 		GoToAuth:  false,
 		AuthURL:   "",
 	})
