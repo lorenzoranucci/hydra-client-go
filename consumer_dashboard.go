@@ -33,6 +33,11 @@ func handleConsumerDashboardGet(w http.ResponseWriter, r *http.Request, _ httpro
 		RedirectURL: fmt.Sprintf("http://%s:%d/consumer/dashboard", ClientID, Port),
 	}
 
+	socialLoginProvider := r.URL.Query().Get("social_login_provider")
+	if socialLoginProvider != "" {
+		state.SocialLoginProvider = &socialLoginProvider
+	}
+
 	authTokenCookie, err := r.Cookie("accessToken")
 	idTokenCookie, err := r.Cookie("idToken")
 	refreshTokenCookie, err := r.Cookie("refreshToken")

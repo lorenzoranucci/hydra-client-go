@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/oauth2"
 )
 
 var loginCallbackTemplate = template.Must(template.New("").Parse(`<html>
@@ -27,11 +28,23 @@ func handleLoginCallback(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		return
 	}
 
-	//todo check state
+	state := &State{}
+	stateJson := r.URL.Query().Get("state")
+	err := json.Unmarshal([]byte(stateJson), state)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	codeVerifier := getCodeVerifierByState(*state)
 
 	code := r.URL.Query().Get("code")
 	conf := getOAuth2Conf()
-	token, err := conf.Exchange(Ctx, code)
+	token, err := conf.Exchange(
+		Ctx,
+		code,
+		oauth2.SetAuthURLParam("code_verifier", codeVerifier),
+	)
 	if err != nil {
 		handleError(w, err)
 		return
@@ -57,15 +70,6 @@ func handleLoginCallback(w http.ResponseWriter, r *http.Request, _ httprouter.Pa
 		Name:  "refreshToken",
 		Value: fmt.Sprintf("%v", token.RefreshToken),
 	})
-
-	state := &State{}
-	stateJson := r.URL.Query().Get("state")
-	err = json.Unmarshal([]byte(stateJson), state)
-
-	if err != nil {
-		handleError(w, err)
-		return
-	}
 
 	_ = loginCallbackTemplate.Execute(w, struct {
 		RedirectURI string

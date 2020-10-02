@@ -12,13 +12,13 @@ import (
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
+	cv "github.com/nirasan/go-oauth-pkce-code-verifier"
 	"github.com/ory/x/randx"
 	"golang.org/x/oauth2"
 )
 
 const Port = 9011
 const ClientID = "client-frontend.localhost"
-const ClientSecret = "some-secret"
 const Auth2AuthURL = "https://www.prontopro.dev/oauth2/auth"
 const Auth2TokenURL = "https://www.prontopro.dev/oauth2/token"
 var CallBackURL = fmt.Sprintf("http://%s:%d/login-callback", ClientID, Port)
@@ -46,18 +46,35 @@ func main() {
 type State struct {
 	RedirectURL string
 	Altk *string `json:"Altk,omitempty"`
+	ID string
+	SocialLoginProvider *string `json:"social_login_provider,omitempty"`
+}
+
+var codeVerifiersByState = make(map[string]string)
+
+func getCodeVerifierByState(state State) string {
+	s := codeVerifiersByState[state.ID]
+	delete(codeVerifiersByState, state.ID)
+	return s
 }
 
 func getAuthURL(state State) (string, error) {
-	/*stateRand, err := randx.RuneSequence(24, randx.AlphaLower)
+	stateRand, err := randx.RuneSequence(24, randx.AlphaLower)
 	if err != nil {
 		return "", err
-	}*/
+	}
+	state.ID = string(stateRand)
 
 	nonce, err := randx.RuneSequence(24, randx.AlphaLower)
 	if err != nil {
 		return "", err
 	}
+
+	// initialize the code verifier
+	var CodeVerifier, _ = cv.CreateCodeVerifierWithLength(cv.MaxLength)
+
+	// Create code_challenge with S256 method
+	codeChallenge := CodeVerifier.CodeChallengeS256()
 
 	conf := getOAuth2Conf()
 	stateJson, err := json.Marshal(state)
@@ -65,19 +82,21 @@ func getAuthURL(state State) (string, error) {
 		return "", err
 	}
 
+	codeVerifiersByState[state.ID] = string(CodeVerifier.String())
 	return conf.AuthCodeURL(
 		string(stateJson),
 		oauth2.SetAuthURLParam("audience", strings.Join(Audience, "+")),
 		oauth2.SetAuthURLParam("nonce", string(nonce)),
 		oauth2.SetAuthURLParam("prompt", strings.Join(Prompt, "+")),
 		oauth2.SetAuthURLParam("max_age", strconv.Itoa(MaxAge)),
+		oauth2.SetAuthURLParam("code_challenge", codeChallenge),
+		oauth2.SetAuthURLParam("code_challenge_method", "S256"),
 	), nil
 }
 
 func getOAuth2Conf() oauth2.Config {
 	return oauth2.Config{
 		ClientID:     ClientID,
-		ClientSecret: ClientSecret,
 		Endpoint: oauth2.Endpoint{
 			TokenURL: Auth2TokenURL,
 			AuthURL:  Auth2AuthURL,
